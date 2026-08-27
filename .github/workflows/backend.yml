@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx fakeredis
+      - run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx fakeredis aiosqlite
       - run: cd backend && pytest tests/ -v --tb=short
     env:
       GROQ_API_KEY: test
