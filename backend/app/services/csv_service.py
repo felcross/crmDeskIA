@@ -85,7 +85,8 @@ def _stats_date(series: pd.Series) -> dict:
     s = series.dropna()
     if s.empty:
         return {"min": None, "max": None, "nulls": int(series.isna().sum())}
-    fmt = lambda v: str(v.date()) if hasattr(v, "date") else str(v)
+    def fmt(v):
+        return str(v.date()) if hasattr(v, "date") else str(v)
     return {"min": fmt(s.min()), "max": fmt(s.max()), "nulls": int(series.isna().sum())}
 
 
@@ -143,17 +144,20 @@ def build_schema_llm(context: dict) -> str:
         col_type = info["type"]
         if col_type == "date":
             lines.append(
-                f"    - {col}  [DATE]  from {info['min']} to {info['max']}  |  {info['nulls']} nulls"
+                f"    - {col}  [DATE]  from {info['min']} to {info['max']}"
+                f"  |  {info['nulls']} nulls"
             )
         elif col_type == "numeric":
             lines.append(
-                f"    - {col}  [NUMBER]  min={info['min']}  max={info['max']}  mean={info['mean']}  |  {info['nulls']} nulls"
+                f"    - {col}  [NUMBER]  min={info['min']}  max={info['max']}"
+                f"  mean={info['mean']}  |  {info['nulls']} nulls"
             )
         elif col_type == "categorical":
             vals = ", ".join(f'"{v}"' for v in info["values"])
             extra = "  (+ others)" if info["truncated"] else ""
             lines.append(
-                f"    - {col}  [CATEGORY]  {info['n_unique']} values: {vals}{extra}  |  {info['nulls']} nulls"
+                f"    - {col}  [CATEGORY]  {info['n_unique']} values:"
+                f" {vals}{extra}  |  {info['nulls']} nulls"
             )
         else:
             lines.append(
@@ -252,7 +256,9 @@ JSON:"""
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-def execute_suggestion(suggestion: dict, df: pd.DataFrame) -> tuple[pd.DataFrame | None, str | None]:
+def execute_suggestion(
+    suggestion: dict, df: pd.DataFrame
+) -> tuple[pd.DataFrame | None, str | None]:
     """Execute suggestion SQL against DuckDB in-memory. CSV never touches persistent DB."""
     sql = suggestion.get("sql", "").strip()
     if not sql:

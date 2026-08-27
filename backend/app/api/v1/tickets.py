@@ -2,11 +2,11 @@ import structlog
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from app.dependencies import get_db
 from app.models.common import ResponseEnvelope
 from app.models.ticket import TicketCaptureRequest, TicketResponse
 from app.repositories.ticket_repo import TicketRepository
 from app.services.chat_service import processar_ticket
-from app.dependencies import get_db
 
 log = structlog.get_logger()
 

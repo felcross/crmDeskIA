@@ -1,8 +1,9 @@
 """Tests for auth endpoints (Redis sessions)."""
 
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi import HTTPException
 
 

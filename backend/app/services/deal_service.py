@@ -4,8 +4,8 @@ Deal Service — CRUD operations for deals.
 
 import structlog
 
-from app.repositories.deal_repo import DealRepository
 from app.dependencies import get_db
+from app.repositories.deal_repo import DealRepository
 
 log = structlog.get_logger()
 

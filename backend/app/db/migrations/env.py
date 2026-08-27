@@ -7,7 +7,15 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config import settings
 from app.db.base import Base
-from app.entities import User, CapturedLead, Lead, Deal, AuditLog, Ticket, Company  # noqa: F401 — register models
+from app.entities import (  # noqa: F401 — register models
+    AuditLog,
+    CapturedLead,
+    Company,
+    Deal,
+    Lead,
+    Ticket,
+    User,
+)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

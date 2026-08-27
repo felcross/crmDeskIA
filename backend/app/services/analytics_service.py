@@ -43,7 +43,10 @@ def sales_funnel(deals: list[dict]) -> ChartResponse:
         return ChartResponse(chart_type="funnel", title="Funil de Vendas", data=[])
 
     df = pd.DataFrame(deals)
-    stage_order = ["appointmentscheduled", "qualifiedtobuy", "presentationscheduled", "decisionmakerbought", "closedwon", "closedlost"]
+    stage_order = [
+        "appointmentscheduled", "qualifiedtobuy", "presentationscheduled",
+        "decisionmakerbought", "closedwon", "closedlost",
+    ]
     counts = df["estagio"].value_counts()
 
     ordered = []

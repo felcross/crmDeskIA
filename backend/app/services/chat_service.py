@@ -39,10 +39,19 @@ DESCRICAO_MAX_LEN = 500
 # Deterministic messages
 # ══════════════════════════════════════════════════════════════════════════════
 
-MSG_LEAD_CONCLUIDO = "Lead registrado com sucesso! Um especialista entrará em contato em breve."
-MSG_TICKET_CONCLUIDO = "Chamado registrado com sucesso! Nosso suporte entrará em contato o mais rápido possível."
-MSG_EMPRESA_NOVA = "Sua empresa não foi encontrada em nosso cadastro — criamos o cadastro agora."
-MSG_LIMITE_TENTATIVAS = "Não foi possível continuar o atendimento por falta de informação válida. Por favor, inicie novamente."
+MSG_LEAD_CONCLUIDO = (
+    "Lead registrado com sucesso! Um especialista entrará em contato em breve."
+)
+MSG_TICKET_CONCLUIDO = (
+    "Chamado registrado com sucesso! Nosso suporte entrará em contato o mais rápido possível."
+)
+MSG_EMPRESA_NOVA = (
+    "Sua empresa não foi encontrada em nosso cadastro — criamos o cadastro agora."
+)
+MSG_LIMITE_TENTATIVAS = (
+    "Não foi possível continuar o atendimento por falta de informação válida."
+    " Por favor, inicie novamente."
+)
 
 # Per-field questions (used for nome validation and field labels)
 FIELD_QUESTIONS = {
@@ -82,6 +91,7 @@ MSG_BATCH_TICKET = (
 
 def _get_llm(temperature: float = 0.3):
     from langchain_groq import ChatGroq
+
     from app.services.groq_watchdog import schedule_model_check
 
     try:
@@ -117,9 +127,11 @@ INVALIDO — a resposta não atende ao campo "{campo}" (formato errado, vazio, s
 FORA_CONTEXTO — o visitante falou de outro assunto não relacionado
 
 Na segunda linha, escreva UMA frase curta de resposta ao visitante:
-- Se VALIDO: confirme brevemente e faça a próxima pergunta: {proxima_pergunta or 'Aguarde um momento.'}
+- Se VALIDO: confirme brevemente e faça a próxima pergunta:
+  {proxima_pergunta or 'Aguarde um momento.'}
 - Se INVALIDO: peça educadamente para tentar novamente, explicando o que é esperado
-- Se FORA_CONTEXTO: redirecione cordialmente dizendo que está ali para ajudar com o {contexto}, e repita a pergunta
+- Se FORA_CONTEXTO: redirecione cordialmente dizendo que está ali para ajudar
+  com o {contexto}, e repita a pergunta
 
 Responda APENAS com essas duas linhas, sem markdown, sem formatação extra."""
 
@@ -477,9 +489,9 @@ async def processar_ticket(
     )
 
     if result["concluido"] and not result["encerrado_por_falha"]:
+        from app.dependencies import get_db
         from app.repositories.company_repo import CompanyRepository
         from app.repositories.ticket_repo import TicketRepository
-        from app.dependencies import get_db
 
         dados = result["dados_parciais"]
         descricao = dados.get("descricao", "")
@@ -553,7 +565,9 @@ async def stream_chat(
     import json as _json
     llm = _get_llm(temperature=0.3)
 
-    dados = f"DEALS:\n{_json.dumps(deals[:50], ensure_ascii=False)}\n\nCONTATOS:\n{_json.dumps(contacts[:50], ensure_ascii=False)}"
+    deals_json = _json.dumps(deals[:50], ensure_ascii=False)
+    contacts_json = _json.dumps(contacts[:50], ensure_ascii=False)
+    dados = f"DEALS:\n{deals_json}\n\nCONTATOS:\n{contacts_json}"
 
     messages = [SystemMessage(content=f"{SYSTEM_ANALITICO}\n\n{dados}")]
     for msg in historico[-6:]:

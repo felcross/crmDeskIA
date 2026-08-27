@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 
+from app.dependencies import get_db
 from app.models.common import PaginationMeta, ResponseEnvelope
 from app.models.dashboard import (
     DashboardChartsResponse,
@@ -7,6 +8,7 @@ from app.models.dashboard import (
     KPICardResponse,
     LeadResponse,
 )
+from app.repositories.lead_repo import LeadRepository
 from app.services.analytics_service import (
     compute_kpis,
     contacts_by_month,
@@ -15,8 +17,6 @@ from app.services.analytics_service import (
     value_by_month,
 )
 from app.services.deal_service import deal_service
-from app.repositories.lead_repo import LeadRepository
-from app.dependencies import get_db
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 

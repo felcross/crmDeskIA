@@ -2,7 +2,7 @@
 CSV Analysis API — upload CSV and receive AI-powered analysis suggestions.
 """
 
-from fastapi import APIRouter, Request, UploadFile, File, HTTPException
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 
 from app.middleware.rate_limit import limiter
 from app.services.csv_service import analyze_and_suggest

@@ -32,12 +32,12 @@ class LeadRepository(BaseRepository[Lead]):
         leads = result.scalars().all()
         return [
             {
-                "id": str(l.id),
-                "nome": l.nome,
-                "email": l.email or "",
-                "telefone": l.telefone or "",
-                "status_lead": l.status_lead or "",
-                "criado_em": str(l.criado_em),
+                "id": str(lead.id),
+                "nome": lead.nome,
+                "email": lead.email or "",
+                "telefone": lead.telefone or "",
+                "status_lead": lead.status_lead or "",
+                "criado_em": str(lead.criado_em),
             }
-            for l in leads
+            for lead in leads
         ]

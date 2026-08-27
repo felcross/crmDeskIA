@@ -7,14 +7,12 @@ import pytest
 
 from app.services.chat_service import (
     LEAD_BATCH_FIELDS,
-    TICKET_BATCH_FIELDS,
-    MSG_BATCH_LEAD,
-    MSG_BATCH_TICKET,
     MSG_LIMITE_TENTATIVAS,
-    _extract_batch_fields,
-    _processar_fase_nome,
-    _processar_fase_lote,
+    TICKET_BATCH_FIELDS,
     _build_followup_message,
+    _extract_batch_fields,
+    _processar_fase_lote,
+    _processar_fase_nome,
     processar_mensagem_bot,
 )
 

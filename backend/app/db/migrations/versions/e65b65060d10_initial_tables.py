@@ -1,19 +1,18 @@
 """initial_tables
 
 Revision ID: e65b65060d10
-Revises: 
+Revises:
 Create Date: 2026-08-17 19:58:25.897625
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = 'e65b65060d10'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -25,7 +24,7 @@ def upgrade() -> None:
     sa.Column('resource_type', sa.String(length=100), nullable=False),
     sa.Column('resource_id', sa.String(length=100), nullable=True),
     sa.Column('details', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_audit_logs_action'), 'audit_logs', ['action'], unique=False)
@@ -37,7 +36,7 @@ def upgrade() -> None:
     sa.Column('interesse', sa.Text(), nullable=False),
     sa.Column('hubspot_contact_id', sa.String(length=50), nullable=True),
     sa.Column('captured_by_user_id', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_captured_leads_email'), 'captured_leads', ['email'], unique=False)
@@ -47,7 +46,7 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('telefone', sa.String(length=50), nullable=True),
     sa.Column('status_lead', sa.String(length=50), nullable=True),
-    sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_leads_email'), 'leads', ['email'], unique=False)
@@ -57,8 +56,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('google_id', sa.String(length=255), nullable=True),
     sa.Column('role', sa.Enum('ADMIN', 'USER', 'VIEWER', name='userrole'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('google_id')
     )
@@ -70,7 +69,7 @@ def upgrade() -> None:
     sa.Column('estagio', sa.String(length=100), nullable=False),
     sa.Column('pipeline', sa.String(length=100), nullable=False),
     sa.Column('data_close', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),  # noqa: E501
     sa.Column('lead_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['lead_id'], ['leads.id'], ),
     sa.PrimaryKeyConstraint('id')

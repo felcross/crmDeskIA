@@ -8,10 +8,16 @@ from pathlib import Path
 import structlog
 from jinja2 import Environment, FileSystemLoader
 
-from app.services.analytics_service import compute_kpis, contacts_by_month, deals_by_stage, sales_funnel, value_by_month
-from app.services.deal_service import deal_service
-from app.repositories.lead_repo import LeadRepository
 from app.dependencies import get_db
+from app.repositories.lead_repo import LeadRepository
+from app.services.analytics_service import (
+    compute_kpis,
+    contacts_by_month,
+    deals_by_stage,
+    sales_funnel,
+    value_by_month,
+)
+from app.services.deal_service import deal_service
 
 log = structlog.get_logger()
 

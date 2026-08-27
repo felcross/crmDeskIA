@@ -1,5 +1,5 @@
-import structlog
 import sentry_sdk
+import structlog
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 

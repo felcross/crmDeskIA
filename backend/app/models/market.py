@@ -7,8 +7,8 @@ class CurrencyQuote(BaseModel):
     name: str
     bid: float
     ask: float
-    varBid: float
-    pctChange: float
+    varBid: float  # noqa: N815
+    pctChange: float  # noqa: N815
     high: float
     low: float
     timestamp: int

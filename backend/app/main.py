@@ -5,13 +5,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
-from app.config import settings
 from app.api.v1.router import api_v1_router
-from app.middleware.rate_limit import limiter, register_rate_limiting
-from app.middleware.security_headers import SecurityHeadersMiddleware
-from app.middleware.logging import RequestLoggingMiddleware
-from app.middleware.error_handler import register_error_handlers
+from app.config import settings
 from app.middleware.csrf import CSRFMiddleware
+from app.middleware.error_handler import register_error_handlers
+from app.middleware.logging import RequestLoggingMiddleware
+from app.middleware.rate_limit import register_rate_limiting
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.observability import init_sentry, metrics
 
 log = structlog.get_logger()

@@ -1,8 +1,6 @@
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import BaseModel
-
-T = TypeVar("T")
 
 
 class ErrorDetail(BaseModel):
@@ -11,7 +9,7 @@ class ErrorDetail(BaseModel):
     details: dict[str, Any] | None = None
 
 
-class ResponseEnvelope(BaseModel, Generic[T]):
+class ResponseEnvelope[T](BaseModel):
     data: T
     error: None = None
     meta: dict[str, Any] | None = None

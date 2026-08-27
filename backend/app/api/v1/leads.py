@@ -6,7 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db
 from app.models.common import ResponseEnvelope
 from app.models.dashboard import DealResponse
-from app.models.lead import CapturedLeadResponse, ConvertLeadRequest, LeadCaptureRequest, LeadFanOutResult
+from app.models.lead import (
+    CapturedLeadResponse,
+    ConvertLeadRequest,
+    LeadCaptureRequest,
+    LeadFanOutResult,
+)
 from app.repositories.deal_repo import DealRepository
 from app.repositories.lead_repo import LeadRepository
 from app.services.chat_service import processar_lead

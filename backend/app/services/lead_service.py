@@ -4,9 +4,9 @@ Lead Service — Lead capture + fan-out orchestration.
 
 import structlog
 
+from app.dependencies import get_db
 from app.events.publisher import event_publisher
 from app.repositories.captured_lead_repo import CapturedLeadRepository
-from app.dependencies import get_db
 
 log = structlog.get_logger()
 

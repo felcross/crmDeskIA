@@ -5,7 +5,7 @@ Does NOT auto-switch models. Only logs a warning and (TODO) sends email alert.
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 import structlog
@@ -28,7 +28,7 @@ async def _check_model_availability() -> None:
         if raw:
             checked_at = datetime.fromisoformat(raw) if isinstance(raw, str) else None
             if checked_at:
-                days_since = (datetime.now(timezone.utc) - checked_at).days
+                days_since = (datetime.now(UTC) - checked_at).days
                 if days_since < CHECK_INTERVAL_DAYS:
                     return
 
@@ -46,7 +46,7 @@ async def _check_model_availability() -> None:
         # Update checked_at
         await redis_cache.set(
             REDIS_KEY,
-            datetime.now(timezone.utc).isoformat(),
+            datetime.now(UTC).isoformat(),
             ttl_seconds=CHECK_INTERVAL_DAYS * 86400,
         )
 

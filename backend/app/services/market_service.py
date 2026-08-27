@@ -4,8 +4,8 @@ Market Service — AwesomeAPI integration for currency quotes.
 Reuses the RedisCache pattern from the existing backend.
 """
 
-import structlog
 import httpx
+import structlog
 
 from app.cache.redis_cache import redis_cache
 from app.config import settings

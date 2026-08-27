@@ -3,11 +3,11 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from app.dependencies import get_db
 from app.models.chat import ChatRequest
+from app.repositories.lead_repo import LeadRepository
 from app.services.chat_service import stream_chat
 from app.services.deal_service import deal_service
-from app.repositories.lead_repo import LeadRepository
-from app.dependencies import get_db
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
