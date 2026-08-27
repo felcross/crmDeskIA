@@ -1,7 +1,28 @@
+# Environment
 .env
-.cache_hubspot/
+
+# Legacy (Streamlit monolith)
+legacy/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
 *.db
+.pytest_cache/
+.ruff_cache/
+
+# HubSpot cache
+.cache_hubspot/
+
+# Frontend
+node_modules/
+dist/
+
+# Local overrides
+docker-compose.override.yml
+
+# MiMoCode
+.mimocode/
