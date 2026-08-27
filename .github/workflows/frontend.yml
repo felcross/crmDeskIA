@@ -35,7 +35,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/fcross/python/crm-ai-mvp
+            cd /home/fcross/python/crmDeskIA
             git pull
             docker compose -f docker-compose.yml build frontend
             docker compose -f docker-compose.yml up -d frontend
