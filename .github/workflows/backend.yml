@@ -58,4 +58,5 @@ jobs:
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
             docker compose -f docker-compose.yml build backend
+            docker compose -f docker-compose.yml run --rm backend python -m alembic upgrade head
             docker compose -f docker-compose.yml up -d backend
