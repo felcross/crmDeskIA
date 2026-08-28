@@ -10,8 +10,14 @@ from app.models.common import ErrorDetail, ErrorResponse
 CSRF_COOKIE_NAME = "csrf_token"
 CSRF_HEADER_NAME = "x-csrf-token"
 
-# Paths exempt from CSRF (OAuth callback — Google can't send CSRF token)
-_CSRF_EXEMPT_PATHS = ("/api/v1/auth/callback",)
+# Paths exempt from CSRF
+# - OAuth callback: Google can't send CSRF token
+# - Public chat endpoints: unauthenticated, no session cookie exists before first POST
+_CSRF_EXEMPT_PATHS = (
+    "/api/v1/auth/callback",
+    "/api/v1/tickets/chat",
+    "/api/v1/leads/chat",
+)
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
