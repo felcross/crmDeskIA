@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = lazy(() => import("@/features/dashboard/DashboardPage"));
 const Chat = lazy(() => import("@/features/chat/Chat"));
-const LeadCapture = lazy(() => import("@/features/leads/LeadCapture"));
 const Reports = lazy(() => import("@/features/reports/Reports"));
 const Landing = lazy(() => import("@/features/auth/Landing"));
 
@@ -35,14 +34,6 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingPage />}>
                     <Chat />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="leads"
-                element={
-                  <Suspense fallback={<LoadingPage />}>
-                    <LeadCapture />
                   </Suspense>
                 }
               />

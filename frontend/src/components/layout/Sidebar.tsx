@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   MessageSquare,
-  Users,
   BarChart3,
   ChevronLeft,
   ChevronRight,
@@ -19,7 +18,6 @@ interface SidebarProps {
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/chat", label: "Chat", icon: MessageSquare },
-  { to: "/leads", label: "Leads", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
 ];
 

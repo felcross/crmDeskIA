@@ -3,7 +3,6 @@ import { KPICards } from "./KPICards";
 import { ChartsGrid } from "./ChartsGrid";
 import { MarketWidget } from "./MarketWidget";
 import { DealsTable } from "./DealsTable";
-import { LeadsTable } from "./LeadsTable";
 
 export default function DashboardPage() {
   return (
@@ -33,7 +32,6 @@ export default function DashboardPage() {
 
         <TabsContent value="data" className="space-y-6">
           <DealsTable />
-          <LeadsTable />
         </TabsContent>
       </Tabs>
     </div>

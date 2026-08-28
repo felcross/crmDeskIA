@@ -1,5 +1,5 @@
 import structlog
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from app.models.common import ResponseEnvelope
 from app.models.market import CurrencyHistoryResponse, CurrencyQuoteResponse, HistoryPoint
@@ -18,11 +18,8 @@ async def get_quotes(
     try:
         quotes = await awesomeapi_service.get_last_quotes(pairs=pairs)
     except Exception as e:
-        log.error("Failed to fetch quotes", error=str(e))
-        raise HTTPException(
-            status_code=502,
-            detail="Não foi possível obter as cotações no momento. Tente novamente mais tarde.",
-        )
+        log.warning("market_quotes_unavailable", error=str(e))
+        quotes = []
     return ResponseEnvelope(data=CurrencyQuoteResponse(quotes=quotes))
 
 
@@ -32,7 +29,11 @@ async def get_history(
     dias: int = Query(30, ge=1, le=360, description="Number of days (max 360)"),
 ):
     """Get daily historical quotes for a currency pair."""
-    data = await awesomeapi_service.get_daily_history(moeda=moeda, dias=dias)
+    try:
+        data = await awesomeapi_service.get_daily_history(moeda=moeda, dias=dias)
+    except Exception as e:
+        log.warning("market_history_unavailable", error=str(e))
+        data = []
     return ResponseEnvelope(
         data=CurrencyHistoryResponse(
             moeda=moeda,
