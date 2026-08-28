@@ -27,6 +27,9 @@ TICKET_FIELDS = ["nome", "empresa", "cargo", "email", "descricao"]
 LEAD_BATCH_FIELDS = ["email", "empresa", "interesse"]
 TICKET_BATCH_FIELDS = ["empresa", "cargo", "email", "descricao"]
 
+# Sequential field order for ticket flow (one at a time)
+TICKET_SEQUENTIAL_FIELDS = ["nome", "empresa", "cargo", "email", "descricao"]
+
 OPTIONAL_FIELDS = {"telefone"}
 
 REGEX_VALIDATORS = {
@@ -241,6 +244,51 @@ def _build_followup_message(campos_faltantes: list[str]) -> str:
     else:
         items = ", ".join(labels[:-1]) + f" e {labels[-1]}"
         return f"Ainda preciso de {items} — pode complementar?"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sequential field extraction (one field at a time)
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def _extract_single_field(
+    campo: str, mensagem: str, fluxo: str
+) -> str | None:
+    """Extract a single field value from user message via LLM.
+
+    Returns the extracted value or None if not found/invalid.
+    """
+    contexto = "captura de lead" if fluxo == "lead" else "abertura de chamado"
+    label = FIELD_QUESTIONS.get(campo, campo)
+
+    system = f"""Você é um assistente de {contexto}.
+O visitante está respondendo a pergunta sobre "{label}".
+
+Mensagem do visitante: "{mensagem}"
+
+Extraia o valor do campo "{campo}" da mensagem.
+Responda APENAS com o valor extraído, sem formatação extra.
+Se a mensagem não contiver uma resposta válida para "{campo}", responda apenas: INVALIDO"""
+
+    llm = _get_llm(temperature=0.1)
+
+    try:
+        response = await llm.ainvoke([
+            SystemMessage(content=system),
+            HumanMessage(content=mensagem),
+        ])
+        raw = response.content.strip()
+    except Exception as e:
+        log.error("llm_single_field_error", error=str(e), fluxo=fluxo, campo=campo)
+        return None
+
+    if raw.upper() == "INVALIDO" or not raw:
+        return None
+
+    # Regex validation for email
+    if campo in REGEX_VALIDATORS and not REGEX_VALIDATORS[campo].match(raw):
+        return None
+
+    return raw
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -473,8 +521,22 @@ async def processar_lead(
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Ticket capture — full flow
+# Ticket capture — sequential flow (one field at a time)
 # ══════════════════════════════════════════════════════════════════════════════
+
+MSG_ATENDIMENTO_CONCLUIDO = (
+    "Atendimento registrado com sucesso! Nosso time entrará em contato o mais rápido possível."
+)
+
+# Next field after each phase
+_TICKET_NEXT_FIELD = {
+    "nome": "empresa",
+    "empresa": "cargo",
+    "cargo": "email",
+    "email": "descricao",
+    "descricao": None,  # all fields collected
+}
+
 
 async def processar_ticket(
     mensagem: str,
@@ -483,48 +545,149 @@ async def processar_ticket(
     dados_parciais: dict,
     tentativas_falhas: int,
 ) -> dict:
-    """Process a ticket capture message."""
-    result = await processar_mensagem_bot(
-        mensagem, fase, campos_pendentes, dados_parciais, tentativas_falhas, fluxo="ticket"
-    )
+    """Process a ticket capture message — sequential one-field-at-a-time flow.
 
-    if result["concluido"] and not result["encerrado_por_falha"]:
-        from app.dependencies import get_db
-        from app.repositories.company_repo import CompanyRepository
-        from app.repositories.ticket_repo import TicketRepository
+    Flow: nome → empresa → cargo → email → descricao → create lead + ticket.
+    """
+    # Check attempt limit
+    if tentativas_falhas >= 3:
+        log.info("ticket_limite_tentativas", fase=fase)
+        return {
+            "mensagem": MSG_LIMITE_TENTATIVAS,
+            "fase": fase,
+            "campos_pendentes": [],
+            "campos_extraidos": [],
+            "dados_parciais": dados_parciais,
+            "tentativas_falhas": tentativas_falhas,
+            "concluido": True,
+            "encerrado_por_falha": True,
+            "resultado": None,
+        }
 
-        dados = result["dados_parciais"]
-        descricao = dados.get("descricao", "")
+    # Extract the current field
+    valor = await _extract_single_field(fase, mensagem, "ticket")
 
-        if len(descricao) > DESCRICAO_MAX_LEN:
-            descricao = await _summarize_text(descricao)
+    if valor is None:
+        # Field not valid — ask again
+        label = FIELD_QUESTIONS.get(fase, fase)
+        tentativas_falhas += 1
+        if tentativas_falhas >= 3:
+            log.info("ticket_limite_tentativas", fase=fase)
+            return {
+                "mensagem": MSG_LIMITE_TENTATIVAS,
+                "fase": fase,
+                "campos_pendentes": [],
+                "campos_extraidos": [],
+                "dados_parciais": dados_parciais,
+                "tentativas_falhas": tentativas_falhas,
+                "concluido": True,
+                "encerrado_por_falha": True,
+                "resultado": None,
+            }
+        return {
+            "mensagem": f"Não consegui identificar o {label}. Pode informar novamente?",
+            "fase": fase,
+            "campos_pendentes": [],
+            "campos_extraidos": [],
+            "dados_parciais": dados_parciais,
+            "tentativas_falhas": tentativas_falhas,
+            "concluido": False,
+            "encerrado_por_falha": False,
+            "resultado": None,
+        }
 
-        empresa_nome = dados.get("empresa", "")
-        empresa_msg = ""
+    # Field extracted successfully
+    dados_parciais[fase] = valor
+    log.info("ticket_field_extracted", fase=fase, valor=valor)
 
-        async for session in get_db():
-            company_repo = CompanyRepository(session)
-            ticket_repo = TicketRepository(session)
+    # Determine next phase
+    next_fase = _TICKET_NEXT_FIELD.get(fase)
 
-            company = await company_repo.get_by_nome_case_insensitive(empresa_nome)
-            if company is None:
-                company = await company_repo.create_company(
-                    nome=empresa_nome, origem="chamado_automatico"
-                )
-                empresa_msg = f"\n\n{MSG_EMPRESA_NOVA}"
+    if next_fase is not None:
+        # Ask next field
+        next_label = FIELD_QUESTIONS.get(next_fase, next_fase)
+        return {
+            "mensagem": f"Qual o {next_label}?",
+            "fase": next_fase,
+            "campos_pendentes": [],
+            "campos_extraidos": [fase],
+            "dados_parciais": dados_parciais,
+            "tentativas_falhas": 0,
+            "concluido": False,
+            "encerrado_por_falha": False,
+            "resultado": None,
+        }
 
-            ticket = await ticket_repo.create_ticket(
-                nome=dados.get("nome", ""),
-                email=dados.get("email", ""),
-                descricao=descricao,
-                prioridade="media",
-                cargo=dados.get("cargo", ""),
-                company_id=company.id,
+    # All fields collected — create lead + ticket
+    return await _finalizar_atendimento(dados_parciais)
+
+
+async def _finalizar_atendimento(dados_parciais: dict) -> dict:
+    """Create lead (if needed) + ticket from collected data."""
+    from app.dependencies import get_db
+    from app.repositories.company_repo import CompanyRepository
+    from app.repositories.lead_repo import LeadRepository
+    from app.repositories.ticket_repo import TicketRepository
+
+    dados = dados_parciais
+    descricao = dados.get("descricao", "")
+
+    if len(descricao) > DESCRICAO_MAX_LEN:
+        descricao = await _summarize_text(descricao)
+
+    empresa_nome = dados.get("empresa", "")
+    email = dados.get("email", "")
+    nome = dados.get("nome", "")
+    cargo = dados.get("cargo", "")
+    empresa_msg = ""
+
+    async for session in get_db():
+        lead_repo = LeadRepository(session)
+        company_repo = CompanyRepository(session)
+        ticket_repo = TicketRepository(session)
+
+        # Look up lead by email
+        lead = await lead_repo.get_by_email(email) if email else None
+        if lead is None:
+            lead = await lead_repo.create_lead(
+                nome=nome,
+                email=email,
+                status_lead="novo",
             )
-            await session.commit()
+            log.info("lead_created_from_ticket", lead_id=lead.id, email=email)
 
-        result["mensagem"] = MSG_TICKET_CONCLUIDO + empresa_msg
-        result["resultado"] = {
+        # Look up or create company
+        company = await company_repo.get_by_nome_case_insensitive(empresa_nome)
+        if company is None:
+            company = await company_repo.create_company(
+                nome=empresa_nome, origem="chamado_automatico"
+            )
+            empresa_msg = f"\n\n{MSG_EMPRESA_NOVA}"
+
+        # Create ticket linked to lead
+        ticket = await ticket_repo.create_ticket(
+            nome=nome,
+            email=email,
+            descricao=descricao,
+            prioridade="media",
+            cargo=cargo,
+            company_id=company.id,
+            lead_id=lead.id,
+        )
+        await session.commit()
+
+    log.info("atendimento_finalizado", ticket_id=ticket.id, lead_id=lead.id, email=email)
+
+    return {
+        "mensagem": MSG_ATENDIMENTO_CONCLUIDO + empresa_msg,
+        "fase": "descricao",
+        "campos_pendentes": [],
+        "campos_extraidos": ["descricao"],
+        "dados_parciais": dados_parciais,
+        "tentativas_falhas": 0,
+        "concluido": True,
+        "encerrado_por_falha": False,
+        "resultado": {
             "id": str(ticket.id),
             "nome": ticket.nome,
             "email": ticket.email,
@@ -533,10 +696,10 @@ async def processar_ticket(
             "status": ticket.status,
             "cargo": ticket.cargo,
             "company_id": ticket.company_id,
+            "lead_id": lead.id,
             "criado_em": str(ticket.created_at),
-        }
-
-    return result
+        },
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════

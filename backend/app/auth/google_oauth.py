@@ -36,8 +36,6 @@ def get_google_auth_url(state: str = "") -> str:
         "redirect_uri": _redirect_uri(),
         "response_type": "code",
         "scope": " ".join(SCOPES),
-        "access_type": "offline",
-        "prompt": "consent",
     }
     if state:
         params["state"] = state

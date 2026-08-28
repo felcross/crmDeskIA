@@ -18,6 +18,11 @@ interface SSEWireEvent {
   chart?: ChartResponse;
 }
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match?.[1] ?? null;
+}
+
 export async function* sendMessage(
   pergunta: string,
   historico: Message[],
@@ -28,11 +33,19 @@ export async function* sendMessage(
     history: historico.map((m) => ({ role: m.role, content: m.content })),
   };
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const csrfToken = getCsrfToken();
+  if (csrfToken) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
+
   let response: Response;
   try {
     response = await fetch("/api/v1/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal,
     });

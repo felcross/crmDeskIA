@@ -14,49 +14,58 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LeadForm } from "./LeadForm";
 import { LeadChatMessage } from "./LeadChatMessage";
-import { sendLeadChatMessage } from "@/api/leads";
-import type { Message } from "@/api/chat";
+import { sendTicketChatMessage } from "@/api/tickets";
 import type { CapturedLeadResponse } from "@/types/api";
 
-interface ChatMessage extends Message {
-  leadData?: CapturedLeadResponse | null;
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
 }
 
-function LeadSummaryCard({ lead }: { lead: CapturedLeadResponse }) {
+interface TicketResult {
+  id: string;
+  nome: string;
+  email: string;
+  descricao: string;
+  lead_id?: number;
+}
+
+function AtendimentoSummaryCard({ result }: { result: TicketResult }) {
   return (
     <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
           <CheckCircle2 className="h-5 w-5" />
-          Lead Capturado
+          Atendimento Registrado
         </CardTitle>
       </CardHeader>
       <CardContent>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <dt className="font-medium text-muted-foreground">Nome</dt>
-          <dd>{lead.nome}</dd>
+          <dd>{result.nome}</dd>
           <dt className="font-medium text-muted-foreground">Email</dt>
-          <dd>{lead.email}</dd>
-          {lead.telefone && (
-            <>
-              <dt className="font-medium text-muted-foreground">Telefone</dt>
-              <dd>{lead.telefone}</dd>
-            </>
-          )}
-          <dt className="font-medium text-muted-foreground">Interesse</dt>
-          <dd>{lead.interesse || "—"}</dd>
-          <dt className="font-medium text-muted-foreground">Criado em</dt>
-          <dd>{new Date(lead.criado_em).toLocaleDateString("pt-BR")}</dd>
+          <dd>{result.email}</dd>
+          <dt className="font-medium text-muted-foreground">Descrição</dt>
+          <dd>{result.descricao}</dd>
         </dl>
       </CardContent>
     </Card>
   );
 }
 
+const INITIAL_BOT_MESSAGE =
+  "Olá! Vou registrar seu atendimento. Qual o seu nome completo?";
+
 export default function LeadCapturePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [capturedLead, setCapturedLead] = useState<CapturedLeadResponse | null>(null);
+  const [fase, setFase] = useState("nome");
+  const [dadosParciais, setDadosParciais] = useState<Record<string, string>>({});
+  const [tentativasFalhas, setTentativasFalhas] = useState(0);
+  const [concluido, setConcluido] = useState(false);
+  const [resultado, setResultado] = useState<TicketResult | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -67,35 +76,62 @@ export default function LeadCapturePage() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Show initial bot message
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: INITIAL_BOT_MESSAGE,
+          timestamp: Date.now(),
+        },
+      ]);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const chatMutation = useMutation({
-    mutationFn: async (pergunta: string) => {
-      const history: Message[] = messages.map((m) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        timestamp: m.timestamp,
-      }));
-      return sendLeadChatMessage(pergunta, history);
+    mutationFn: async (mensagem: string) => {
+      return sendTicketChatMessage({
+        mensagem,
+        fase,
+        campos_pendentes: [],
+        dados_parciais: dadosParciais,
+        tentativas_falhas: tentativasFalhas,
+      });
     },
-    onSuccess: (data, pergunta) => {
+    onSuccess: (data, mensagem) => {
+      // Add user message
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
-        content: pergunta,
+        content: mensagem,
         timestamp: Date.now(),
       };
-      const aiMsg: ChatMessage = {
+
+      // Add bot response
+      const botMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: data.response,
-        leadData: data.lead_data,
+        content: data.mensagem,
         timestamp: Date.now(),
       };
-      setMessages((prev) => [...prev, userMsg, aiMsg]);
 
-      if (data.lead_data) {
-        setCapturedLead(data.lead_data);
-        toast.success("Lead capturado com sucesso!");
+      setMessages((prev) => [...prev, userMsg, botMsg]);
+
+      // Update state from response
+      setFase(data.fase);
+      setDadosParciais(data.dados_parciais);
+      setTentativasFalhas(data.tentativas_falhas);
+
+      if (data.concluido && !data.encerrado_por_falha) {
+        setConcluido(true);
+        if (data.resultado) {
+          setResultado(data.resultado as TicketResult);
+          toast.success("Atendimento registrado com sucesso!");
+        }
+      } else if (data.encerrado_por_falha) {
+        toast.error("Não foi possível completar o atendimento.");
       }
     },
     onError: (error: Error) => {
@@ -105,7 +141,7 @@ export default function LeadCapturePage() {
 
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || chatMutation.isPending) return;
+    if (!trimmed || chatMutation.isPending || concluido) return;
     setInput("");
     chatMutation.mutate(trimmed);
   };
@@ -118,21 +154,32 @@ export default function LeadCapturePage() {
   };
 
   const handleFormSuccess = (lead: CapturedLeadResponse) => {
-    setCapturedLead(lead);
+    // Keep for manual form tab compatibility
   };
 
   const handleReset = () => {
-    setMessages([]);
-    setCapturedLead(null);
+    setMessages([
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: INITIAL_BOT_MESSAGE,
+        timestamp: Date.now(),
+      },
+    ]);
+    setFase("nome");
+    setDadosParciais({});
+    setTentativasFalhas(0);
+    setConcluido(false);
+    setResultado(null);
     setInput("");
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Captura de Leads</h1>
+        <h1 className="text-2xl font-bold">Atendimento</h1>
         <p className="mt-1 text-muted-foreground">
-          Capture novos leads via conversa com IA ou formulário manual.
+          Registre um novo atendimento via conversa com IA ou formulário manual.
         </p>
       </div>
 
@@ -143,28 +190,17 @@ export default function LeadCapturePage() {
         </TabsList>
 
         <TabsContent value="chat" className="space-y-4">
-          {capturedLead && <LeadSummaryCard lead={capturedLead} />}
+          {resultado && <AtendimentoSummaryCard result={resultado} />}
 
           <Card>
             <CardContent className="p-4">
               <div className="flex h-[400px] flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-                  {messages.length === 0 && (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      <p className="text-center text-sm">
-                        Olá! Sou o assistente de captura de leads.
-                        <br />
-                        Me conte sobre o interesse do seu lead e eu ajudarei a
-                        registrar as informações.
-                      </p>
-                    </div>
-                  )}
                   {messages.map((msg) => (
                     <LeadChatMessage
                       key={msg.id}
                       role={msg.role}
                       content={msg.content}
-                      leadData={msg.leadData}
                     />
                   ))}
                   {chatMutation.isPending && (
@@ -178,16 +214,20 @@ export default function LeadCapturePage() {
 
                 <div className="mt-4 flex gap-2">
                   <Input
-                    placeholder="Descreva o lead..."
+                    placeholder={
+                      concluido
+                        ? "Atendimento concluído"
+                        : "Digite sua resposta..."
+                    }
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    disabled={chatMutation.isPending}
+                    disabled={chatMutation.isPending || concluido}
                   />
                   <Button
                     size="icon"
                     onClick={handleSend}
-                    disabled={!input.trim() || chatMutation.isPending}
+                    disabled={!input.trim() || chatMutation.isPending || concluido}
                   >
                     {chatMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -200,7 +240,7 @@ export default function LeadCapturePage() {
             </CardContent>
           </Card>
 
-          {messages.length > 0 && (
+          {messages.length > 1 && (
             <div className="flex justify-center">
               <Button variant="outline" size="sm" onClick={handleReset}>
                 Nova conversa
@@ -210,8 +250,6 @@ export default function LeadCapturePage() {
         </TabsContent>
 
         <TabsContent value="form" className="space-y-4">
-          {capturedLead && <LeadSummaryCard lead={capturedLead} />}
-
           <Card>
             <CardHeader>
               <CardTitle>Cadastrar Lead Manualmente</CardTitle>

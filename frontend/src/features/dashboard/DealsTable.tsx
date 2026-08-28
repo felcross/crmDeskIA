@@ -101,7 +101,7 @@ export function DealsTable() {
   if (error) {
     return (
       <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-        Erro ao carregar deals: {error.message}
+        Erro ao carregar ofertas: {error.message}
       </div>
     );
   }
@@ -109,7 +109,7 @@ export function DealsTable() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-lg">Deals</CardTitle>
+        <CardTitle className="text-lg">Ofertas</CardTitle>
         <select
           value={stageFilter}
           onChange={(e) => {

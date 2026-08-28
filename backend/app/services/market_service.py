@@ -13,8 +13,9 @@ from app.config import settings
 log = structlog.get_logger()
 
 BASE_URL = "https://economia.awesomeapi.com.br"
-CACHE_TTL = 5 * 60  # 5 minutes (without API key)
+CACHE_TTL = 10 * 60  # 10 minutes (without API key)
 CACHE_TTL_WITH_KEY = 15 * 60  # 15 minutes (with API key)
+STALE_TTL = 60 * 60  # 1 hour — serve stale data if API fails
 
 
 class AwesomeAPIService:
@@ -59,13 +60,22 @@ class AwesomeAPIService:
             pairs: Comma-separated currency pairs (e.g., "USD-BRL,EUR-BRL")
         """
         cache_key = f"market:last:{pairs}"
+        stale_key = f"market:stale:{pairs}"
         cached = await redis_cache.get(cache_key)
         if cached is not None:
             log.info("Cache HIT — market quotes", pairs=pairs)
             return cached
 
         log.info("Fetching quotes from AwesomeAPI", pairs=pairs)
-        data = await self._get(f"/json/last/{pairs}")
+        try:
+            data = await self._get(f"/json/last/{pairs}")
+        except Exception as e:
+            log.warning("AwesomeAPI failed, trying stale cache", error=str(e))
+            stale = await redis_cache.get(stale_key)
+            if stale is not None:
+                log.info("Serving stale cached quotes", pairs=pairs)
+                return stale
+            raise
 
         quotes = []
         # AwesomeAPI returns {"USDBRL": {...}, "EURBRL": {...}}
@@ -86,6 +96,7 @@ class AwesomeAPIService:
                     })
 
         await redis_cache.set(cache_key, quotes, ttl_seconds=self.cache_ttl)
+        await redis_cache.set(stale_key, quotes, ttl_seconds=STALE_TTL)
         log.info("Quotes loaded", count=len(quotes))
         return quotes
 

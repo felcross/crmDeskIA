@@ -1,13 +1,18 @@
-import { TrendingUp, DollarSign, BarChart3, CheckCircle } from "lucide-react";
+import { TrendingUp, DollarSign, BarChart3, CheckCircle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useKPIs } from "@/hooks/useDashboardData";
 
 const kpiConfig = [
-  { title: "Total de Deals", icon: TrendingUp, format: (v: number) => v.toLocaleString("pt-BR") },
-  { title: "Valor do Pipeline", icon: DollarSign, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) },
-  { title: "Ticket Médio", icon: BarChart3, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) },
-  { title: "Deals Fechados", icon: CheckCircle, format: (v: number) => v.toLocaleString("pt-BR") },
+  { title: "Total de Ofertas", icon: TrendingUp, format: (v: number) => v.toLocaleString("pt-BR"), tooltip: "Quantidade total de oportunidades de venda em andamento" },
+  { title: "Valor do Pipeline", icon: DollarSign, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), tooltip: "Soma do valor de todas as ofertas em aberto — quanto a empresa pode faturar se todas fecharem" },
+  { title: "Ticket Médio", icon: BarChart3, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), tooltip: "Valor médio por oferta fechada" },
+  { title: "Ofertas Fechadas", icon: CheckCircle, format: (v: number) => v.toLocaleString("pt-BR"), tooltip: "Quantidade de ofertas que já viraram venda" },
 ] as const;
 
 export function KPICards() {
@@ -45,8 +50,18 @@ export function KPICards() {
         return (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                 {kpi.title}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    {config.tooltip}
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>

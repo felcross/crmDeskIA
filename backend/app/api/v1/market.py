@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Query
+import structlog
+from fastapi import APIRouter, HTTPException, Query
 
 from app.models.common import ResponseEnvelope
 from app.models.market import CurrencyHistoryResponse, CurrencyQuoteResponse, HistoryPoint
 from app.services.market_service import awesomeapi_service
+
+log = structlog.get_logger()
 
 router = APIRouter(prefix="/market", tags=["market"])
 
@@ -12,7 +15,14 @@ async def get_quotes(
     pairs: str = Query("USD-BRL,EUR-BRL", description="Comma-separated currency pairs"),
 ):
     """Get current currency quotes."""
-    quotes = await awesomeapi_service.get_last_quotes(pairs=pairs)
+    try:
+        quotes = await awesomeapi_service.get_last_quotes(pairs=pairs)
+    except Exception as e:
+        log.error("Failed to fetch quotes", error=str(e))
+        raise HTTPException(
+            status_code=502,
+            detail="Não foi possível obter as cotações no momento. Tente novamente mais tarde.",
+        )
     return ResponseEnvelope(data=CurrencyQuoteResponse(quotes=quotes))
 
 

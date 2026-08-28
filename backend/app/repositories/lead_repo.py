@@ -14,7 +14,7 @@ class LeadRepository(BaseRepository[Lead]):
         nome: str,
         email: str | None = None,
         telefone: str | None = None,
-        status_lead: str | None = None,
+        status_lead: str | None = "novo",
     ) -> Lead:
         lead = Lead(
             nome=nome,
@@ -23,6 +23,12 @@ class LeadRepository(BaseRepository[Lead]):
             status_lead=status_lead,
         )
         return await self.create(lead)
+
+    async def get_by_email(self, email: str) -> Lead | None:
+        result = await self.session.execute(
+            select(Lead).where(Lead.email == email)
+        )
+        return result.scalar_one_or_none()
 
     async def get_all_as_dicts(self, limit: int = 100) -> list[dict]:
         """Return leads as dicts compatible with dashboard response format."""

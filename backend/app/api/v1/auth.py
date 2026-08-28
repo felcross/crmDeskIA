@@ -10,6 +10,7 @@ import secrets
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -138,64 +139,75 @@ async def callback(
     Exchanges the authorization code for tokens, fetches user info,
     creates or retrieves the user, and sets a Redis-backed session cookie.
     """
+    login_error_url = f"{settings.frontend_origin}/login?error=auth_failed"
+
     if not code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing authorization code",
-        )
+        log.warning("OAuth callback missing code")
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
 
     # Validate OAuth state param (CSRF protection)
     expected_state = request.cookies.get(OAUTH_STATE_COOKIE)
     if not expected_state or not secrets.compare_digest(state, expected_state):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid or missing OAuth state parameter",
-        )
+        log.warning("OAuth callback invalid state")
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
 
     # Exchange code for tokens
-    token_data = await exchange_code_for_token(code)
+    try:
+        token_data = await exchange_code_for_token(code)
+    except Exception as e:
+        log.error("OAuth token exchange failed", error=str(e))
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
+
     access_token = token_data.get("access_token")
     if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to obtain access token",
-        )
+        log.warning("OAuth callback no access_token in response")
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
 
     # Fetch user info from Google
-    google_user = await get_user_info(access_token)
+    try:
+        google_user = await get_user_info(access_token)
+    except Exception as e:
+        log.error("OAuth user info fetch failed", error=str(e))
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
+
     google_id: str = google_user["sub"]
     email: str = google_user["email"]
     name: str = google_user.get("name", email)
     avatar_url: str | None = google_user.get("picture")
 
     # Find or create user
-    repo = UserRepository(db)
-    user = await repo.get_by_google_id(google_id)
-    if user is None:
-        user = await repo.get_by_email(email)
-        if user is not None:
-            user.google_id = google_id
-            if avatar_url:
-                user.avatar_url = avatar_url
+    try:
+        repo = UserRepository(db)
+        user = await repo.get_by_google_id(google_id)
+        if user is None:
+            user = await repo.get_by_email(email)
+            if user is not None:
+                user.google_id = google_id
+                if avatar_url:
+                    user.avatar_url = avatar_url
+                await db.flush()
+            else:
+                user = await repo.create_user(
+                    email=email,
+                    name=name,
+                    google_id=google_id,
+                    role=UserRole.ADMIN,
+                    avatar_url=avatar_url,
+                )
+        elif avatar_url and user.avatar_url != avatar_url:
+            user.avatar_url = avatar_url
             await db.flush()
-        else:
-            user = await repo.create_user(
-                email=email,
-                name=name,
-                google_id=google_id,
-                role=UserRole.ADMIN,
-                avatar_url=avatar_url,
-            )
-    elif avatar_url and user.avatar_url != avatar_url:
-        user.avatar_url = avatar_url
-        await db.flush()
 
-    await db.commit()
+        await db.commit()
+    except Exception as e:
+        log.error("OAuth user creation/retrieval failed", error=str(e))
+        return RedirectResponse(url=login_error_url, status_code=status.HTTP_302_FOUND)
 
     # Create Redis session and set cookie
     token = await _create_session(user.id, user.email, user.name, user.role.value)
 
-    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    redirect_url = f"{settings.frontend_origin}/dashboard"
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
     response.delete_cookie(OAUTH_STATE_COOKIE)
     response.set_cookie(
         key=SESSION_COOKIE,

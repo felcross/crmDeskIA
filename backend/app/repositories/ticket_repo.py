@@ -16,6 +16,7 @@ class TicketRepository(BaseRepository[Ticket]):
         prioridade: str = "media",
         cargo: str = "",
         company_id: int | None = None,
+        lead_id: int | None = None,
     ) -> Ticket:
         ticket = Ticket(
             nome=nome,
@@ -24,5 +25,6 @@ class TicketRepository(BaseRepository[Ticket]):
             prioridade=prioridade,
             cargo=cargo,
             company_id=company_id,
+            lead_id=lead_id,
         )
         return await self.create(ticket)
