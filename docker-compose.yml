@@ -1,3 +1,5 @@
+name: crmdeskia
+
 services:
   # --- BFF (camada pública) ---
   bff:
