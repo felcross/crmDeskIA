@@ -1,12 +1,12 @@
-name: Backend CI/CD
+name: CRM Backend CI/CD
 
 on:
   push:
     branches: [main]
     paths:
-      - "backend/**"
+      - "services/crm/**"
       - "docker-compose.yml"
-      - ".github/workflows/backend.yml"
+      - ".github/workflows/crm.yml"
 
 jobs:
   lint:
@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check backend/
+      - run: ruff check services/crm/
 
   test:
     runs-on: ubuntu-latest
@@ -27,8 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx fakeredis aiosqlite
-      - run: cd backend && pytest tests/ -v --tb=short
+      - run: pip install -r services/crm/requirements.txt pytest pytest-asyncio httpx fakeredis aiosqlite
+      - run: cd services/crm && pytest tests/ -v --tb=short
     env:
       GROQ_API_KEY: test
       DATABASE_URL: "sqlite+aiosqlite:///:memory:"
@@ -57,6 +57,6 @@ jobs:
             sed -i '/^GOOGLE_CLIENT_SECRET=/d' .env
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-            docker compose -f docker-compose.yml build backend
-            docker compose -f docker-compose.yml run --rm backend python -m alembic upgrade head
-            docker compose -f docker-compose.yml up -d backend
+            docker compose -f docker-compose.yml build crm-backend
+            docker compose -f docker-compose.yml run --rm crm-backend python -m alembic upgrade head
+            docker compose -f docker-compose.yml up -d crm-backend
