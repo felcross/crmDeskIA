@@ -27,6 +27,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:123@postgres:5432/postgres
       - REDIS_URL=redis://redis:6379/0
       - FRONTEND_ORIGIN=https://crm.felbatista.tech
+      - APP_ENV=production
     depends_on:
       postgres:
         condition: service_healthy
