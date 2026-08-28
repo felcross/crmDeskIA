@@ -1,11 +1,9 @@
 """Tests for bug fixes and unified atendimento flow."""
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import status
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # T1: OAuth callback redirect
@@ -19,6 +17,7 @@ class TestOAuthCallbackRedirect:
     async def test_callback_missing_code_redirects_to_login_error(self):
         """Missing code should redirect to /login?error=auth_failed."""
         from fastapi.testclient import TestClient
+
         from app.main import app
 
         client = TestClient(app, raise_server_exceptions=False)
@@ -30,6 +29,7 @@ class TestOAuthCallbackRedirect:
     async def test_callback_invalid_state_redirects_to_login_error(self):
         """Invalid OAuth state should redirect to /login?error=auth_failed."""
         from fastapi.testclient import TestClient
+
         from app.main import app
 
         client = TestClient(app, raise_server_exceptions=False)
@@ -236,11 +236,15 @@ class TestUnifiedAtendimentoFlow:
                 mock_lead_repo_cls.return_value = mock_lead_repo
 
                 mock_company_repo = AsyncMock()
-                mock_company_repo.get_by_nome_case_insensitive = AsyncMock(return_value=mock_company)
+                mock_company_repo.get_by_nome_case_insensitive = AsyncMock(
+                    return_value=mock_company
+                )
                 mock_company_repo_cls.return_value = mock_company_repo
 
                 mock_ticket_repo = AsyncMock()
-                mock_ticket_repo.create_ticket = AsyncMock(return_value=mock_ticket)
+                mock_ticket_repo.create_ticket = AsyncMock(
+                    return_value=mock_ticket
+                )
                 mock_ticket_repo_cls.return_value = mock_ticket_repo
 
                 result = await processar_ticket(
@@ -310,11 +314,15 @@ class TestUnifiedAtendimentoFlow:
                 mock_lead_repo_cls.return_value = mock_lead_repo
 
                 mock_company_repo = AsyncMock()
-                mock_company_repo.get_by_nome_case_insensitive = AsyncMock(return_value=mock_company)
+                mock_company_repo.get_by_nome_case_insensitive = AsyncMock(
+                    return_value=mock_company
+                )
                 mock_company_repo_cls.return_value = mock_company_repo
 
                 mock_ticket_repo = AsyncMock()
-                mock_ticket_repo.create_ticket = AsyncMock(return_value=mock_ticket)
+                mock_ticket_repo.create_ticket = AsyncMock(
+                    return_value=mock_ticket
+                )
                 mock_ticket_repo_cls.return_value = mock_ticket_repo
 
                 result = await processar_ticket(

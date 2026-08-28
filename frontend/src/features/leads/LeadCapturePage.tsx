@@ -153,7 +153,7 @@ export default function LeadCapturePage() {
     }
   };
 
-  const handleFormSuccess = (lead: CapturedLeadResponse) => {
+  const handleFormSuccess = (_lead: CapturedLeadResponse) => {
     // Keep for manual form tab compatibility
   };
 
