@@ -3,22 +3,23 @@
 Uso: docker compose run --rm ecommerce-backend python scripts/seed.py
 """
 import asyncio
+import json
 import random
 from datetime import datetime, timedelta, timezone
 
 from app.db.session import async_session, engine
-from app.entities import Base, Order, OrderItem, Product
+from app.entities import AbandonedCart, Base, EmailLog, Order, OrderItem, Product
 from sqlalchemy import text
 
 PRODUCTS = [
-    {"nome": "Camiseta Básica Algodão", "descricao": "Camiseta 100% algodão, várias cores", "preco": 79.90, "estoque": 150, "imagem_url": "https://placehold.co/300x300?text=Camiseta"},
-    {"nome": "Calça Jeans Slim", "descricao": "Calça jeans masculina slim fit", "preco": 189.90, "estoque": 80, "imagem_url": "https://placehold.co/300x300?text=Calca"},
-    {"nome": "Tênis Esportivo Runner", "descricao": "Tênis para corrida e caminhada", "preco": 299.90, "estoque": 45, "imagem_url": "https://placehold.co/300x300?text=Tenis"},
-    {"nome": "Mochila Urban Pro", "descricao": "Mochila resistente para uso diário", "preco": 149.90, "estoque": 60, "imagem_url": "https://placehold.co/300x300?text=Mochila"},
-    {"nome": "Boné Aba Reta", "descricao": "Boné estilo snapback", "preco": 59.90, "estoque": 200, "imagem_url": "https://placehold.co/300x300?text=Bone"},
-    {"nome": "Jaqueta Corta-Vento", "descricao": "Jaqueta leve impermeável", "preco": 249.90, "estoque": 8, "imagem_url": "https://placehold.co/300x300?text=Jaqueta"},
-    {"nome": "Meia Esportiva 3 pares", "descricao": "Kit com 3 pares de meias esportivas", "preco": 39.90, "estoque": 300, "imagem_url": "https://placehold.co/300x300?text=Meia"},
-    {"nome": "Bolsa Tote Canvas", "descricao": "Bolsa de alça em canvas estampado", "preco": 119.90, "estoque": 5, "imagem_url": "https://placehold.co/300x300?text=Bolsa"},
+    {"nome": "Batom Matte Ruby", "descricao": "Batom de longa duração, acabamento matte", "preco": 49.90, "estoque": 200, "imagem_url": "https://placehold.co/300x300?text=Batom"},
+    {"nome": "Base Fluida HD", "descricao": "Base de cobertura média a alta, 30ml", "preco": 89.90, "estoque": 120, "imagem_url": "https://placehold.co/300x300?text=Base"},
+    {"nome": "Sérum Vitamina C", "descricao": "Sérum antioxidante anti-idade, 30ml", "preco": 129.90, "estoque": 75, "imagem_url": "https://placehold.co/300x300?text=Serum"},
+    {"nome": "Protetor Solar FPS 50", "descricao": "Protetor solar facial oil-free, 50g", "preco": 69.90, "estoque": 180, "imagem_url": "https://placehold.co/300x300?text=Protetor"},
+    {"nome": "Máscara de Cílios Volume", "descricao": "Máscara para volume e alongamento", "preco": 59.90, "estoque": 90, "imagem_url": "https://placehold.co/300x300?text=Mascara"},
+    {"nome": "Hidratante Corporal Vanilla", "descricao": "Creme hidratante corporal 400ml", "preco": 39.90, "estoque": 6, "imagem_url": "https://placehold.co/300x300?text=Hidratante"},
+    {"nome": "Paleta de Sombras 12 Cores", "descricao": "Paleta com tons neutros e vibrantes", "preco": 119.90, "estoque": 50, "imagem_url": "https://placehold.co/300x300?text=Paleta"},
+    {"nome": "Shampoo Reparação", "descricao": "Shampoo para cabelos danificados, 300ml", "preco": 34.90, "estoque": 4, "imagem_url": "https://placehold.co/300x300?text=Shampoo"},
 ]
 
 CUSTOMERS = [
@@ -34,7 +35,6 @@ CUSTOMERS = [
     {"nome": "Fernanda Martins", "email": "fernanda@email.com"},
 ]
 
-STATUSES = ["pendente", "pago", "enviado", "entregue", "cancelado"]
 QR_BASE = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PEDIDO-"
 
 
@@ -47,6 +47,8 @@ async def seed():
         result = await session.execute(text("SELECT COUNT(*) FROM products"))
         if result.scalar() > 0:
             print("Banco já populado. Limpando e re-seeding...")
+            await session.execute(text("DELETE FROM email_logs"))
+            await session.execute(text("DELETE FROM abandoned_carts"))
             await session.execute(text("DELETE FROM order_items"))
             await session.execute(text("DELETE FROM orders"))
             await session.execute(text("DELETE FROM products"))
@@ -69,7 +71,6 @@ async def seed():
             days_ago = random.randint(0, 30)
             order_date = now - timedelta(days=days_ago)
 
-            # Distribute statuses: 8 entregue, 4 pendente/pago, 3 cancelado
             if i < 8:
                 status = "entregue"
             elif i < 12:
@@ -108,8 +109,50 @@ async def seed():
             order.total = round(total, 2)
         await session.flush()
 
+        # Insert abandoned carts
+        abandoned_data = [
+            {"email": "maria@email.com", "nome": "Maria Santos", "valor": 189.80, "itens": [{"product_id": 1, "nome": "Batom Matte Ruby", "qty": 2}, {"product_id": 4, "nome": "Protetor Solar FPS 50", "qty": 1}]},
+            {"email": "pedro@email.com", "nome": "Pedro Oliveira", "valor": 129.90, "itens": [{"product_id": 3, "nome": "Sérum Vitamina C", "qty": 1}]},
+            {"email": "ana@email.com", "nome": "Ana Costa", "valor": 259.70, "itens": [{"product_id": 7, "nome": "Paleta de Sombras", "qty": 1}, {"product_id": 5, "nome": "Máscara de Cílios", "qty": 1}, {"product_id": 1, "nome": "Batom Matte Ruby", "qty": 1}]},
+            {"email": "lucas@email.com", "nome": "Lucas Pereira", "valor": 69.90, "itens": [{"product_id": 4, "nome": "Protetor Solar FPS 50", "qty": 1}]},
+            {"email": "juliana@email.com", "nome": "Juliana Lima", "valor": 315.00, "itens": [{"product_id": 3, "nome": "Sérum Vitamina C", "qty": 1}, {"product_id": 7, "nome": "Paleta de Sombras", "qty": 1}, {"product_id": 2, "nome": "Base Fluida HD", "qty": 1}]},
+        ]
+        for ac in abandoned_data:
+            cart = AbandonedCart(
+                cliente_email=ac["email"],
+                cliente_nome=ac["nome"],
+                valor_total=ac["valor"],
+                itens_json=json.dumps(ac["itens"], ensure_ascii=False),
+                criado_em=now - timedelta(days=random.randint(1, 10)),
+            )
+            session.add(cart)
+
+        # Insert email logs
+        email_data = [
+            {"para": "joao@email.com", "assunto": "Pedido #1 confirmado — QR Code para pagamento", "tipo": "confirmacao"},
+            {"para": "maria@email.com", "assunto": "Seu pedido #2 foi enviado!", "tipo": "envio"},
+            {"para": "pedro@email.com", "assunto": "Pedido #3 entregue com sucesso", "tipo": "entrega"},
+            {"para": "ana@email.com", "assunto": "Você esqueceu algo no carrinho!", "tipo": "carrinho"},
+            {"para": "lucas@email.com", "assunto": "Pedido #5 confirmado — QR Code para pagamento", "tipo": "confirmacao"},
+            {"para": "juliana@email.com", "assunto": "Promoção especial: 15% off em séruns", "tipo": "promocao"},
+            {"para": "carlos@email.com", "assunto": "Pedido #7 enviado — acompanhe sua entrega", "tipo": "envio"},
+            {"para": "beatriz@email.com", "assunto": "Pedido #8 entregue! Avalie sua experiência", "tipo": "entrega"},
+            {"para": "marcos@email.com", "assunto": "Carrinho abandonado — ganhe 10% off", "tipo": "carrinho"},
+            {"para": "fernanda@email.com", "assunto": "Pedido #10 confirmado — QR Code para pagamento", "tipo": "confirmacao"},
+        ]
+        for i, em in enumerate(email_data):
+            email_log = EmailLog(
+                para=em["para"],
+                assunto=em["assunto"],
+                tipo=em["tipo"],
+                enviado_em=now - timedelta(days=random.randint(0, 15)),
+            )
+            session.add(email_log)
+
         await session.commit()
         print(f"  {len(order_objs)} pedidos criados com itens")
+        print(f"  {len(abandoned_data)} carrinhos abandonados criados")
+        print(f"  {len(email_data)} e-mails fake registrados")
         print("Seed concluído!")
 
 

@@ -13,6 +13,7 @@ const Inventory = lazy(() => import("@/features/inventory/InventoryPage"));
 const Customers = lazy(() => import("@/features/customers/CustomersPage"));
 const Reports = lazy(() => import("@/features/reports/Reports"));
 const Landing = lazy(() => import("@/features/auth/Landing"));
+const Store = lazy(() => import("@/features/store/StorePage"));
 
 function App() {
   return (
@@ -21,6 +22,14 @@ function App() {
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={<LandingRoute />} />
+          <Route
+            path="store"
+            element={
+              <Suspense fallback={<LoadingPage />}>
+                <Store />
+              </Suspense>
+            }
+          />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route

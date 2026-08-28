@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,17 +69,19 @@ export default function Landing() {
           <div className="text-center">
             <h2 className="text-xl font-semibold">Nossa Loja</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Acesse o e-commerce para fazer suas compras.
+              Produtos de beleza com os melhores preços.
             </p>
           </div>
           <Button
             variant="outline"
             className="w-full justify-start gap-3"
             size="lg"
-            disabled
+            asChild
           >
-            <Store className="h-5 w-5" />
-            Acessar Loja (em breve)
+            <Link to="/store">
+              <Store className="h-5 w-5" />
+              Acessar Loja
+            </Link>
           </Button>
         </div>
       </div>
