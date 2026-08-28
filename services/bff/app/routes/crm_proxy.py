@@ -41,7 +41,7 @@ async def proxy_crm(request: Request, path: str) -> Response:
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
-                headers=dict(resp.headers),
+                headers=resp.headers.multi_items(),
             )
         except httpx.ConnectError:
             log.error("crm_backend_unreachable", url=target_url)
@@ -83,7 +83,7 @@ async def proxy_crm_default(request: Request, path: str) -> Response:
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
-                headers=dict(resp.headers),
+                headers=resp.headers.multi_items(),
             )
         except httpx.ConnectError:
             log.error("crm_backend_unreachable", url=target_url)

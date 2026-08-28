@@ -37,7 +37,7 @@ async def proxy_ecommerce(request: Request, path: str) -> Response:
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
-                headers=dict(resp.headers),
+                headers=resp.headers.multi_items(),
             )
         except httpx.ConnectError:
             log.error("ecommerce_backend_unreachable", url=target_url)
