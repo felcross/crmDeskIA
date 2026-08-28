@@ -9,7 +9,7 @@ on:
       - ".github/workflows/frontend.yml"
 
 concurrency:
-  group: deploy-vps-crmdeskia
+  group: deploy-vps-frontend
   cancel-in-progress: false
 
 jobs:
