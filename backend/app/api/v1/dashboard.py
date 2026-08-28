@@ -26,10 +26,10 @@ async def get_kpis():
     deals = await deal_service.get_all_deals(limit=100)
     kpis = compute_kpis(deals)
     cards = [
-        KPICardResponse(title="Total de Deals", value=kpis["total_deals"]),
+        KPICardResponse(title="Total de Ofertas", value=kpis["total_deals"]),
         KPICardResponse(title="Valor do Pipeline", value=kpis["pipeline_value"]),
         KPICardResponse(title="Ticket Médio", value=kpis["average_ticket"]),
-        KPICardResponse(title="Deals Fechados", value=kpis["closed_deals"]),
+        KPICardResponse(title="Ofertas Fechadas", value=kpis["closed_deals"]),
     ]
     return ResponseEnvelope(data=cards)
 

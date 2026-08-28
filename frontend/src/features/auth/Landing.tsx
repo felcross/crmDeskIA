@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, Ticket } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { InlineChat } from "./InlineChat";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -28,7 +28,7 @@ async function handleGoogleLogin() {
   }
 }
 
-type FlowState = "idle" | "lead" | "ticket";
+type FlowState = "idle" | "atendimento";
 
 export default function Landing() {
   const [flowState, setFlowState] = useState<FlowState>("idle");
@@ -76,7 +76,7 @@ export default function Landing() {
               <div className="text-center">
                 <h2 className="text-xl font-semibold">Sou cliente</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Inicie um atendimento ou abra um chamado sem precisar de login.
+                  Inicie um atendimento sem precisar de login.
                 </p>
               </div>
               <div className="space-y-3">
@@ -84,40 +84,20 @@ export default function Landing() {
                   variant="outline"
                   className="w-full justify-start gap-3"
                   size="lg"
-                  onClick={() => setFlowState("lead")}
+                  onClick={() => setFlowState("atendimento")}
                 >
                   <MessageSquare className="h-5 w-5" />
                   Iniciar atendimento
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  size="lg"
-                  onClick={() => setFlowState("ticket")}
-                >
-                  <Ticket className="h-5 w-5" />
-                  Abrir chamado
                 </Button>
               </div>
             </>
           )}
 
-          {flowState === "lead" && (
-            <div className="h-[450px]">
-              <InlineChat
-                endpoint="/leads/chat"
-                greeting="Olá! 👋 Seja bem-vindo. Sou o assistente virtual da empresa. Para que um de nossos especialistas possa entrar em contato com você, preciso de algumas informações. Pode começar me dizendo seu nome completo?"
-                onComplete={() => {}}
-                onReset={() => setFlowState("idle")}
-              />
-            </div>
-          )}
-
-          {flowState === "ticket" && (
+          {flowState === "atendimento" && (
             <div className="h-[450px]">
               <InlineChat
                 endpoint="/tickets/chat"
-                greeting="Olá! 👋 Sou o assistente de suporte. Antes de tudo, qual é o seu nome completo?"
+                greeting="Olá! 👋 Sou o assistente virtual da empresa. Para que um de nossos especialistas possa entrar em contato com você, preciso de algumas informações. Qual o seu nome completo?"
                 onComplete={() => {}}
                 onReset={() => setFlowState("idle")}
               />

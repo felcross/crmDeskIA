@@ -6,7 +6,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 
 const STARTER_QUESTIONS = [
-  "Qual o status dos meus deals este mês?",
+  "Qual o status das minhas ofertas este mês?",
   "Quais leads precisam de acompanhamento?",
   "Gere um resumo do pipeline de vendas.",
   "Quais são os KPIs do dashboard?",

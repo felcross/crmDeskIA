@@ -26,14 +26,14 @@ COLORS = {
 
 def deals_by_stage(deals: list[dict]) -> ChartResponse:
     if not deals:
-        return ChartResponse(chart_type="bar", title="Deals por Estágio", data=[])
+        return ChartResponse(chart_type="bar", title="Ofertas por Estágio", data=[])
 
     df = pd.DataFrame(deals)
     counts = df["estagio"].value_counts()
 
     return ChartResponse(
         chart_type="bar",
-        title="Deals por Estágio",
+        title="Ofertas por Estágio",
         data=[ChartDataPoint(label=str(k), value=float(v)) for k, v in counts.items()],
     )
 

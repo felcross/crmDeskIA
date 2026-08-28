@@ -4,17 +4,17 @@ export const handlers = [
   http.get("/api/v1/dashboard/kpis", () => {
     return HttpResponse.json({
       data: [
-        { title: "Total de Deals", value: 10 },
+        { title: "Total de Ofertas", value: 10 },
         { title: "Valor do Pipeline", value: 50000 },
         { title: "Ticket Médio", value: 5000 },
-        { title: "Deals Fechados", value: 3 },
+        { title: "Ofertas Fechadas", value: 3 },
       ],
     });
   }),
   http.get("/api/v1/dashboard/charts", () => {
     return HttpResponse.json({
       data: {
-        deals_by_stage: { chart_type: "bar", title: "Deals", data: [] },
+        deals_by_stage: { chart_type: "bar", title: "Ofertas", data: [] },
         sales_funnel: { chart_type: "funnel", title: "Funil", data: [] },
         value_by_month: { chart_type: "line", title: "Valor", data: [] },
         contacts_by_month: { chart_type: "bar", title: "Contatos", data: [] },
