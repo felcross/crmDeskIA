@@ -8,7 +8,9 @@ import { Toaster } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = lazy(() => import("@/features/dashboard/DashboardPage"));
-const Chat = lazy(() => import("@/features/chat/Chat"));
+const Orders = lazy(() => import("@/features/orders/OrdersPage"));
+const Inventory = lazy(() => import("@/features/inventory/InventoryPage"));
+const Customers = lazy(() => import("@/features/customers/CustomersPage"));
 const Reports = lazy(() => import("@/features/reports/Reports"));
 const Landing = lazy(() => import("@/features/auth/Landing"));
 
@@ -30,10 +32,26 @@ function App() {
                 }
               />
               <Route
-                path="chat"
+                path="orders"
                 element={
                   <Suspense fallback={<LoadingPage />}>
-                    <Chat />
+                    <Orders />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="inventory"
+                element={
+                  <Suspense fallback={<LoadingPage />}>
+                    <Inventory />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="customers"
+                element={
+                  <Suspense fallback={<LoadingPage />}>
+                    <Customers />
                   </Suspense>
                 }
               />

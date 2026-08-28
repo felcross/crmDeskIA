@@ -1,4 +1,13 @@
-import { TrendingUp, DollarSign, BarChart3, CheckCircle, Info } from "lucide-react";
+import {
+  DollarSign,
+  TrendingUp,
+  ShoppingCart,
+  CheckCircle,
+  BarChart3,
+  Package,
+  AlertTriangle,
+  Info,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import {
@@ -6,22 +15,53 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useKPIs } from "@/hooks/useDashboardData";
+import { useDashboardKPIs } from "@/hooks/useEcommerceData";
 
-const kpiConfig = [
-  { title: "Total de Ofertas", icon: TrendingUp, format: (v: number) => v.toLocaleString("pt-BR"), tooltip: "Quantidade total de oportunidades de venda em andamento" },
-  { title: "Valor do Pipeline", icon: DollarSign, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), tooltip: "Soma do valor de todas as ofertas em aberto — quanto a empresa pode faturar se todas fecharem" },
-  { title: "Ticket Médio", icon: BarChart3, format: (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), tooltip: "Valor médio por oferta fechada" },
-  { title: "Ofertas Fechadas", icon: CheckCircle, format: (v: number) => v.toLocaleString("pt-BR"), tooltip: "Quantidade de ofertas que já viraram venda" },
-] as const;
+const kpiConfig: Record<string, { icon: typeof DollarSign; format: (v: number) => string; tooltip: string }> = {
+  "Faturamento Total": {
+    icon: DollarSign,
+    format: (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    tooltip: "Receita total de pedidos entregues",
+  },
+  "Faturamento Mês": {
+    icon: TrendingUp,
+    format: (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    tooltip: "Receita do mês atual (pedidos entregues)",
+  },
+  "Pedidos Abertos": {
+    icon: ShoppingCart,
+    format: (v) => v.toLocaleString("pt-BR"),
+    tooltip: "Pedidos pendentes ou pagos, aguardando processamento",
+  },
+  "Pedidos Fechados": {
+    icon: CheckCircle,
+    format: (v) => v.toLocaleString("pt-BR"),
+    tooltip: "Pedidos entregues com sucesso",
+  },
+  "Ticket Médio": {
+    icon: BarChart3,
+    format: (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    tooltip: "Valor médio por pedido entregue",
+  },
+  "Estoque Baixo": {
+    icon: Package,
+    format: (v) => v.toLocaleString("pt-BR"),
+    tooltip: "Produtos com menos de 10 unidades em estoque",
+  },
+  "Carrinhos Abandonados": {
+    icon: AlertTriangle,
+    format: (v) => v.toLocaleString("pt-BR"),
+    tooltip: "Carrinhos que não viraram pedido",
+  },
+};
 
 export function KPICards() {
-  const { data: kpis, isLoading, error } = useKPIs();
+  const { data: kpis, isLoading, error } = useDashboardKPIs();
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 7 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="flex h-28 items-center justify-center">
               <LoadingSpinner size="sm" />
@@ -44,8 +84,12 @@ export function KPICards() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {kpis.map((kpi, i) => {
-        const config = kpiConfig[i] ?? kpiConfig[0]!;
+      {kpis.map((kpi) => {
+        const config = kpiConfig[kpi.title] ?? {
+          icon: BarChart3,
+          format: (v: number) => v.toLocaleString("pt-BR"),
+          tooltip: kpi.title,
+        };
         const Icon = config.icon;
         return (
           <Card key={kpi.title}>

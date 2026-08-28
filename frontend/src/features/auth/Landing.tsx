@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,8 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
-import { InlineChat } from "./InlineChat";
+import { Store } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -28,11 +26,7 @@ async function handleGoogleLogin() {
   }
 }
 
-type FlowState = "idle" | "atendimento";
-
 export default function Landing() {
-  const [flowState, setFlowState] = useState<FlowState>("idle");
-
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Left side — Login */}
@@ -40,7 +34,7 @@ export default function Landing() {
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">CRM AI</CardTitle>
-            <CardDescription>Acesse o painel de suporte</CardDescription>
+            <CardDescription>Acesse o painel de gestão</CardDescription>
           </CardHeader>
           <CardContent>
             <Button
@@ -58,7 +52,7 @@ export default function Landing() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
-              Entrar com Google
+              Entrar no CRM/ERP
             </Button>
           </CardContent>
         </Card>
@@ -68,41 +62,24 @@ export default function Landing() {
       <div className="hidden w-px bg-border md:block" />
       <div className="h-px bg-border md:hidden" />
 
-      {/* Right side — Public vitrine */}
+      {/* Right side — E-commerce */}
       <div className="flex flex-1 items-center justify-center bg-muted/30 p-8">
         <div className="w-full max-w-sm space-y-6">
-          {flowState === "idle" && (
-            <>
-              <div className="text-center">
-                <h2 className="text-xl font-semibold">Sou cliente</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Inicie um atendimento sem precisar de login.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  size="lg"
-                  onClick={() => setFlowState("atendimento")}
-                >
-                  <MessageSquare className="h-5 w-5" />
-                  Iniciar atendimento
-                </Button>
-              </div>
-            </>
-          )}
-
-          {flowState === "atendimento" && (
-            <div className="h-[450px]">
-              <InlineChat
-                endpoint="/tickets/chat"
-                greeting="Olá! 👋 Sou o assistente virtual da empresa. Para que um de nossos especialistas possa entrar em contato com você, preciso de algumas informações. Qual o seu nome completo?"
-                onComplete={() => {}}
-                onReset={() => setFlowState("idle")}
-              />
-            </div>
-          )}
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">Nossa Loja</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Acesse o e-commerce para fazer suas compras.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-3"
+            size="lg"
+            disabled
+          >
+            <Store className="h-5 w-5" />
+            Acessar Loja (em breve)
+          </Button>
         </div>
       </div>
     </div>

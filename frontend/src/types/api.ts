@@ -192,3 +192,63 @@ export interface SequentialChatResponse {
   encerrado_por_falha: boolean;
   resultado: unknown;
 }
+
+// E-commerce types
+export interface ProductResponse {
+  id: number;
+  nome: string;
+  descricao: string;
+  preco: number;
+  estoque: number;
+  imagem_url: string | null;
+  ativo: boolean;
+  criado_em: string;
+}
+
+export interface ProductUpdate {
+  nome?: string;
+  descricao?: string;
+  preco?: number;
+  estoque?: number;
+  ativo?: boolean;
+}
+
+export interface OrderItemResponse {
+  id: number;
+  product_id: number;
+  product_nome: string;
+  quantidade: number;
+  preco_unitario: number;
+}
+
+export interface OrderResponse {
+  id: number;
+  cliente_email: string;
+  cliente_nome: string;
+  status: string;
+  total: number;
+  qr_code_url: string | null;
+  criado_em: string;
+  itens: OrderItemResponse[];
+}
+
+export interface CustomerResponse {
+  email: string;
+  nome: string;
+  total_pedidos: number;
+  total_gasto: number;
+}
+
+export interface AbandonedCart {
+  cliente_email: string;
+  valor: number;
+  itens: number;
+  abandonado_em: string;
+}
+
+export interface EmailRecord {
+  para: string;
+  assunto: string;
+  tipo: string;
+  enviado_em: string;
+}

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routes.crm_proxy import router as crm_router
+from app.routes.dashboard import router as dashboard_router
 from app.routes.ecom_proxy import router as ecom_router
 from app.routes.health import router as health_router
 
@@ -25,8 +26,9 @@ app.add_middleware(
 )
 
 app.include_router(health_router, prefix="/api/v1")
-app.include_router(crm_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(ecom_router, prefix="/api/v1")
+app.include_router(crm_router, prefix="/api/v1")  # catch-all CRM — must be last
 
 
 @app.on_event("startup")
