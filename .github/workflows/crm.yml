@@ -8,6 +8,10 @@ on:
       - "docker-compose.yml"
       - ".github/workflows/crm.yml"
 
+concurrency:
+  group: deploy-vps-crmdeskia
+  cancel-in-progress: false
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -57,6 +61,6 @@ jobs:
             sed -i '/^GOOGLE_CLIENT_SECRET=/d' .env
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-            docker compose -f docker-compose.yml build crm-backend
-            docker compose -f docker-compose.yml run --rm crm-backend python -m alembic upgrade head
-            docker compose -f docker-compose.yml up -d crm-backend
+            docker compose -p crmdeskia build crm-backend
+            docker compose -p crmdeskia run --rm crm-backend python -m alembic upgrade head
+            docker compose -p crmdeskia up -d --no-deps crm-backend

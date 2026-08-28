@@ -8,6 +8,10 @@ on:
       - "docker-compose.yml"
       - ".github/workflows/bff.yml"
 
+concurrency:
+  group: deploy-vps-crmdeskia
+  cancel-in-progress: false
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -34,5 +38,5 @@ jobs:
           script: |
             cd /root/crmDeskIA
             git pull
-            docker compose -f docker-compose.yml build bff
-            docker compose -f docker-compose.yml up -d bff
+            docker compose -p crmdeskia build bff
+            docker compose -p crmdeskia up -d --no-deps bff

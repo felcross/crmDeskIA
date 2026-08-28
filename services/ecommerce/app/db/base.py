@@ -1,3 +1,3 @@
-from sqlalchemy.ext.asyncio import async_declarative_base
+from sqlalchemy.orm import declarative_base
 
-Base = async_declarative_base()
+Base = declarative_base()
