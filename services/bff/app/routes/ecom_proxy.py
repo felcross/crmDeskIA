@@ -3,6 +3,7 @@ import structlog
 from fastapi import APIRouter, Request, Response
 
 from app.config import settings
+from app.proxy_utils import build_proxy_response
 
 log = structlog.get_logger()
 router = APIRouter(tags=["ecommerce-proxy"])
@@ -13,10 +14,7 @@ router = APIRouter(tags=["ecommerce-proxy"])
     methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 )
 async def proxy_ecommerce(request: Request, path: str) -> Response:
-    """Proxy all /api/v1/ecommerce/* requests to the E-commerce backend.
-
-    /api/v1/ecommerce/products → http://ecommerce-backend:8001/api/v1/products
-    """
+    """Proxy all /api/v1/ecommerce/* requests to the E-commerce backend."""
     target_url = f"{settings.ecommerce_backend_url}/api/v1/{path}"
     if request.url.query:
         target_url += f"?{request.url.query}"
@@ -34,11 +32,7 @@ async def proxy_ecommerce(request: Request, path: str) -> Response:
                 headers=headers,
                 content=body,
             )
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=resp.headers.multi_items(),
-            )
+            return build_proxy_response(resp)
         except httpx.ConnectError:
             log.error("ecommerce_backend_unreachable", url=target_url)
             return Response(

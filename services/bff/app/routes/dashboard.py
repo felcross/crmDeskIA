@@ -3,7 +3,7 @@ import asyncio
 import httpx
 import structlog
 from fastapi import APIRouter, Request, Response
-
+from app.proxy_utils import build_proxy_response
 from app.config import settings
 
 log = structlog.get_logger()
@@ -84,17 +84,10 @@ async def proxy_products(request: Request):
                 headers=headers,
                 content=body,
             )
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=dict(resp.headers),
-            )
+             return build_proxy_response(resp)
+            
         except httpx.ConnectError:
-            return Response(
-                content=b'{"detail":"E-commerce backend unreachable"}',
-                status_code=502,
-                media_type="application/json",
-            )
+             return build_proxy_response(resp)
 
 
 @router.api_route("/dashboard/products/{product_id}", methods=["GET", "PATCH"])
@@ -114,17 +107,11 @@ async def proxy_product_detail(product_id: int, request: Request):
                 headers=headers,
                 content=body,
             )
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=dict(resp.headers),
-            )
+             return build_proxy_response(resp)
+
         except httpx.ConnectError:
-            return Response(
-                content=b'{"detail":"E-commerce backend unreachable"}',
-                status_code=502,
-                media_type="application/json",
-            )
+
+             return build_proxy_response(resp)
 
 
 @router.get("/dashboard/orders")
@@ -138,17 +125,10 @@ async def proxy_orders(request: Request):
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             resp = await client.get(target)
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=dict(resp.headers),
-            )
+             return build_proxy_response(resp)
+
         except httpx.ConnectError:
-            return Response(
-                content=b'{"detail":"E-commerce backend unreachable"}',
-                status_code=502,
-                media_type="application/json",
-            )
+             return build_proxy_response(resp)
 
 
 @router.get("/dashboard/orders/{order_id}")
@@ -159,18 +139,10 @@ async def proxy_order_detail(order_id: int):
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             resp = await client.get(target)
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=dict(resp.headers),
-            )
-        except httpx.ConnectError:
-            return Response(
-                content=b'{"detail":"E-commerce backend unreachable"}',
-                status_code=502,
-                media_type="application/json",
-            )
+             return build_proxy_response(resp)
 
+        except httpx.ConnectError:
+             return build_proxy_response(resp)
 
 @router.get("/dashboard/customers")
 async def proxy_customers():
