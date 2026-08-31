@@ -40,4 +40,5 @@ jobs:
             git pull
             docker compose -p crmdeskia build ecommerce-backend
             docker compose -p crmdeskia run --rm ecommerce-backend python -m alembic upgrade head
+            docker compose -p crmdeskia run --rm ecommerce-backend python scripts/seed.py
             docker compose -p crmdeskia up -d --no-deps ecommerce-backend

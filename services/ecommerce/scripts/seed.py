@@ -46,13 +46,8 @@ async def seed():
         # Check if already seeded
         result = await session.execute(text("SELECT COUNT(*) FROM products"))
         if result.scalar() > 0:
-            print("Banco já populado. Limpando e re-seeding...")
-            await session.execute(text("DELETE FROM email_logs"))
-            await session.execute(text("DELETE FROM abandoned_carts"))
-            await session.execute(text("DELETE FROM order_items"))
-            await session.execute(text("DELETE FROM orders"))
-            await session.execute(text("DELETE FROM products"))
-            await session.commit()
+            print("Banco já populado — seed ignorado.")
+            return
 
         # Insert products
         product_objs = []
